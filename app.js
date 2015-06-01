@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(expressSession({ secret: process.env.SESSION_SECRET || 'secret',
 	resave: false,
-	saveUninitialized: false 
+	saveUninitialized: false
 }));
 
 app.use(passport.initialize());
@@ -30,20 +30,50 @@ passport.use(new passportLocal.Strategy(function(username, password, done){
 	}
 }));
 
+passport.serializeUser(function(user, done){
+	done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done){
+	//query database or casche here
+	done(null, { id: id, name: id })
+});
+
+function ensureAuthenticated(req, res, next){
+	if (req.isAuthenticated()){
+		next();
+	} else {
+		res.sendStatus(403);
+	}
+}
+
 app.get('/', function(req, res){
 	res.render('index', {
-		isAuthenticated: false,
+		isAuthenticated: req.isAuthenticated(),
 		user: req.user
 	});
 });
 
 app.get('/login', function(req, res){
 	res.render('login');
-})
+});
 
 app.post('/login', passport.authenticate('local'), function(req, res){
 	res. redirect('/');
-})
+});
+
+app.get('/logout', function(req, res){
+	req.logout();
+	res.redirect('/');
+});
+
+app.get('/api/data', ensureAuthenticated, function(req, res){
+	res.json([
+		{ value: 'foo' },
+		{ value: 'bar' },
+		{ value: 'baz' }
+		]);
+});
 
 app.listen(1337, function() {
 	console.log('listening on 1337');

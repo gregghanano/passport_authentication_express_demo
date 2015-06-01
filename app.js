@@ -5,6 +5,7 @@ var expressSession = require('express-session');
 
 var passport = require('passport');
 var passportLocal = require('passport-local');
+var passportHttp = require('passport-http');
 
 var app = express();
 
@@ -21,14 +22,18 @@ app.use(expressSession({ secret: process.env.SESSION_SECRET || 'secret',
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.use(new passportLocal.Strategy(function(username, password, done){
+passport.use(new passportLocal.Strategy(verifyCredentials));
+
+passport.use(new passportHttp.BasicStrategy(verifyCredentials));
+
+function verifyCredentials(username, password, done){
 	// pretend this is using a real database
 	if (username === password){
 		done(null, { id: username, name: username });
 	} else {
 		done(null, null);
 	}
-}));
+}
 
 passport.serializeUser(function(user, done){
 	done(null, user.id);
@@ -66,6 +71,8 @@ app.get('/logout', function(req, res){
 	req.logout();
 	res.redirect('/');
 });
+
+app.use('/api', passport.authenticate('basic', { session: false }));
 
 app.get('/api/data', ensureAuthenticated, function(req, res){
 	res.json([

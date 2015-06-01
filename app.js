@@ -1,3 +1,6 @@
+var fs = require('fs');
+var https = require('https');
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
@@ -8,6 +11,11 @@ var passportLocal = require('passport-local');
 var passportHttp = require('passport-http');
 
 var app = express();
+
+var server = https.createServer({
+	cert: fs.readFileSync(__dirname + '/my.crt'),
+	key: fs.readFileSync(__dirname + '/my.key'),
+}, app);
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -82,6 +90,9 @@ app.get('/api/data', ensureAuthenticated, function(req, res){
 		]);
 });
 
-app.listen(1337, function() {
+server.listen(1337, function() {
 	console.log('listening on 1337');
 });
+
+// command to create openssl cert and key
+// openssl req -x509 -nodes -days 365 -newkey rsa:1024 -out my.crt -keyout my.key
